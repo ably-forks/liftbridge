@@ -932,46 +932,46 @@ func TestBlockStringMultiLine(t *testing.T) {
 
 func TestUnquotedIPAddr(t *testing.T) {
 	expectedItems := []item{
-		{itemKey, "listen", 1},
+		{itemKey, "hostport", 1},
 		{itemString, "127.0.0.1:4222", 1},
 		{itemEOF, "", 1},
 	}
-	lx := lex("listen: 127.0.0.1:4222")
+	lx := lex("hostport: 127.0.0.1:4222")
 	expect(t, lx, expectedItems)
 
 	expectedItems = []item{
-		{itemKey, "listen", 1},
+		{itemKey, "hostport", 1},
 		{itemString, "127.0.0.1", 1},
 		{itemEOF, "", 1},
 	}
-	lx = lex("listen: 127.0.0.1")
+	lx = lex("hostport: 127.0.0.1")
 	expect(t, lx, expectedItems)
 
 	expectedItems = []item{
-		{itemKey, "listen", 1},
+		{itemKey, "hostport", 1},
 		{itemString, "apcera.me:80", 1},
 		{itemEOF, "", 1},
 	}
-	lx = lex("listen: apcera.me:80")
+	lx = lex("hostport: apcera.me:80")
 	expect(t, lx, expectedItems)
 
 	expectedItems = []item{
-		{itemKey, "listen", 1},
+		{itemKey, "hostport", 1},
 		{itemString, ":80", 1},
 		{itemEOF, "", 1},
 	}
-	lx = lex("listen = :80")
+	lx = lex("hostport = :80")
 	expect(t, lx, expectedItems)
 
 	expectedItems = []item{
-		{itemKey, "listen", 1},
+		{itemKey, "hostport", 1},
 		{itemArrayStart, "", 1},
 		{itemString, "localhost:4222", 1},
 		{itemString, "localhost:4333", 1},
 		{itemArrayEnd, "", 1},
 		{itemEOF, "", 1},
 	}
-	lx = lex("listen = [localhost:4222, localhost:4333]")
+	lx = lex("hostport = [localhost:4222, localhost:4333]")
 	expect(t, lx, expectedItems)
 }
 

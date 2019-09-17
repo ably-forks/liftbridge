@@ -23,6 +23,9 @@ const (
 
 	// DefaultPort is the port to bind to if one is not specified.
 	DefaultPort = 9292
+
+	// DefaultListenAddress is the default address to bind to.
+	DefaultListenAddress = "127.0.0.1"
 )
 
 const (
@@ -97,6 +100,7 @@ type ClusteringConfig struct {
 // Config contains all settings for a Liftbridge Server.
 type Config struct {
 	Host                string
+	ListenAddress       string
 	Port                int
 	LogLevel            uint32
 	LogRecovery         bool
@@ -115,8 +119,9 @@ type Config struct {
 // NewDefaultConfig creates a new Config with default settings.
 func NewDefaultConfig() *Config {
 	config := &Config{
-		NATS: nats.GetDefaultOptions(),
-		Port: DefaultPort,
+		NATS:          nats.GetDefaultOptions(),
+		Port:          DefaultPort,
+		ListenAddress: DefaultListenAddress,
 	}
 	config.LogLevel = uint32(log.InfoLevel)
 	config.BatchMaxMessages = defaultBatchMaxMessages
@@ -173,8 +178,8 @@ func NewConfig(configFile string) (*Config, error) {
 
 	for k, v := range c {
 		switch strings.ToLower(k) {
-		case "listen":
-			hp, err := parseListen(v)
+		case "hostport":
+			hp, err := parseHostport(v)
 			if err != nil {
 				return nil, err
 			}
@@ -184,6 +189,8 @@ func NewConfig(configFile string) (*Config, error) {
 			config.Port = int(v.(int64))
 		case "host":
 			config.Host = v.(string)
+		case "listen.address":
+			config.ListenAddress = v.(string)
 		case "log.level":
 			level, err := GetLogLevel(v.(string))
 			if err != nil {
@@ -353,8 +360,8 @@ type hostPort struct {
 	port int
 }
 
-// parseListen will parse the `listen` option containing the host and port.
-func parseListen(v interface{}) (*hostPort, error) {
+// parseHostport will parse the `hostport` option containing the host and port.
+func parseHostport(v interface{}) (*hostPort, error) {
 	hp := &hostPort{}
 	switch v.(type) {
 	// Only a port

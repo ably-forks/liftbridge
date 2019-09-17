@@ -120,7 +120,7 @@ func (s *Server) Start() (err error) {
 		return errors.Wrap(err, "failed to connect to NATS")
 	}
 
-	hp := net.JoinHostPort(s.config.Host, strconv.Itoa(s.config.Port))
+	hp := net.JoinHostPort(s.config.ListenAddress, strconv.Itoa(s.config.Port))
 	l, err := net.Listen("tcp", hp)
 	if err != nil {
 		return errors.Wrap(err, "failed starting listener")
@@ -131,7 +131,7 @@ func (s *Server) Start() (err error) {
 	s.logger.Infof("Namespace:        %s", s.config.Clustering.Namespace)
 	s.logger.Infof("Retention Policy: %s", s.config.Log.RetentionString())
 	s.logger.Infof("Starting server on %s...",
-		net.JoinHostPort(s.config.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
+		net.JoinHostPort(s.config.ListenAddress, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
 
 	// Set a lower bound of one second for LogRollTime to avoid frequent log
 	// rolls which will cause performance problems. This is mainly here because

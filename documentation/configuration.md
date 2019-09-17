@@ -66,7 +66,7 @@ The config file format supports the following syntax:
 An example configuration file is shown below.
 
 ```
-listen: localhost:9293
+hostport: localhost:9293
 data.dir: /tmp/liftbridge/server-2
 log.level: debug
 
@@ -96,9 +96,10 @@ the setting in the configuration file and the CLI flag if it exists.
 
 | Name | Flag | Description | Type | Default | Valid Values |
 |:----|:----|:----|:----|:----|:----|
-| listen | | The server host/port. | string | localhost:9292 | |
+| hostport | | The server host/port. | string | localhost:9292 | |
 | host | | The server host. | string | localhost | |
 | port | port | The server port. | int | 9292 | |
+| listen.address | | The server listen address. | string | 127.0.0.1 | |
 | tls.key | tls-key | The private key file for server certificate. This must be set in combination with `tls.cert` to enable TLS. | string | |
 | tls.cert | tls-cert | The server certificate file. This must be set in combination with `tls.key` to enable TLS. | string | |
 | log.level | level | The logging level. | string | info | [debug, info, warn, error] |

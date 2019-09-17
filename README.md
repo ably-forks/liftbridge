@@ -184,7 +184,7 @@ $ liftbridge --config liftbridge.conf
 An example configuration file is shown below.
 
 ```
-listen: localhost:9293
+hostport: localhost:9293
 data.dir: /tmp/liftbridge/server-2
 log.level: debug
 
