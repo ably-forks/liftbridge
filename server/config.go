@@ -145,6 +145,13 @@ func (c Config) GetListenAddress() HostPort {
 		return c.Listen
 	}
 
+	if len(c.Host) > 0 {
+		return HostPort{
+			Host: c.Host,
+			Port: c.Port,
+		}
+	}
+
 	return HostPort{
 		Host: defaultListenAddress,
 		Port: DefaultPort,

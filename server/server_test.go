@@ -1128,25 +1128,20 @@ func TestListen(t *testing.T) {
 	}
 }
 
-// Ensure that the listen address has the default value when specifying only
-// the host address
+// Ensure that the listen address is the same as the host address when
+// specifying only the latter
 func TestHost(t *testing.T) {
 	config, err := NewConfig("./configs/host.conf")
 	require.NoError(t, err)
 
 	ex := HostPort{
-		Host: defaultListenAddress,
-		Port: DefaultPort,
+		Host: "192.168.0.1",
+		Port: 4222,
 	}
 
 	r := config.GetListenAddress()
 	if r != ex {
 		t.Fatalf("Not Equal:\nReceived: '%+v'\nExpected: '%+v'\n", r, ex)
-	}
-
-	ex = HostPort{
-		Host: "192.168.0.1",
-		Port: 4222,
 	}
 
 	r = config.GetConnectionAddress()
@@ -1198,7 +1193,7 @@ func TestDefaultListenHost(t *testing.T) {
 	}
 
 	ex = HostPort{
-		Host: "",
+		Host: defaultConnectionAddress,
 		Port: DefaultPort,
 	}
 
