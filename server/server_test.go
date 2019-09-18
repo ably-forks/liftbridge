@@ -1101,8 +1101,8 @@ func TestTLS(t *testing.T) {
 	require.Error(t, err)
 }
 
-// Ensure that the host/connection address have the right default value when
-// specifying only the listen address
+// Ensure that the host address is the same as the listen address when
+// specifying only the latter
 func TestListen(t *testing.T) {
 	config, err := NewConfig("./configs/listen.conf")
 	require.NoError(t, err)
@@ -1115,11 +1115,6 @@ func TestListen(t *testing.T) {
 	r := config.GetListenAddress()
 	if r != ex {
 		t.Fatalf("Not Equal:\nReceived: '%+v'\nExpected: '%+v'\n", r, ex)
-	}
-
-	ex = HostPort{
-		Host: defaultConnectionAddress,
-		Port: DefaultPort,
 	}
 
 	r = config.GetConnectionAddress()

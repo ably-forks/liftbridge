@@ -167,6 +167,10 @@ func (c Config) GetConnectionAddress() HostPort {
 		}
 	}
 
+	if len(c.Listen.Host) > 0 {
+		return c.Listen
+	}
+
 	return HostPort{
 		Host: defaultConnectionAddress,
 		Port: DefaultPort,
