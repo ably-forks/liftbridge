@@ -27,6 +27,7 @@ const (
 
 const (
 	defaultListenAddress           = "0.0.0.0"
+	defaultConnectionAddress       = "localhost"
 	defaultReplicaMaxLagTime       = 10 * time.Second
 	defaultReplicaMaxLeaderTimeout = 10 * time.Second
 	defaultRaftSnapshots           = 2
@@ -146,7 +147,7 @@ func (c Config) GetListenAddress() HostPort {
 
 	return HostPort{
 		Host: defaultListenAddress,
-		Port: c.Port,
+		Port: DefaultPort,
 	}
 }
 
@@ -159,7 +160,10 @@ func (c Config) GetConnectionAddress() HostPort {
 		}
 	}
 
-	return c.GetListenAddress()
+	return HostPort{
+		Host: defaultConnectionAddress,
+		Port: DefaultPort,
+	}
 }
 
 // GetLogLevel converts the level string to its corresponding int value. It
