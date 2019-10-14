@@ -105,6 +105,7 @@ type Config struct {
 	LogRecovery         bool
 	LogSilent           bool
 	DataDir             string
+	PluginDir           string
 	BatchMaxMessages    int
 	BatchWaitTime       time.Duration
 	MetadataCacheMaxAge time.Duration
@@ -237,6 +238,8 @@ func NewConfig(configFile string) (*Config, error) {
 			config.LogRecovery = v.(bool)
 		case "data.dir":
 			config.DataDir = v.(string)
+		case "plugin.dir":
+			config.PluginDir = v.(string)
 		case "batch.max.messages":
 			config.BatchMaxMessages = int(v.(int64))
 		case "batch.wait.time":

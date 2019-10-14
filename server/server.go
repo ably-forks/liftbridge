@@ -9,8 +9,12 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
+	"plugin"
+	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -56,6 +60,7 @@ type Server struct {
 	shutdown           bool
 	running            bool
 	goroutineWait      sync.WaitGroup
+	plugins            []Plugin
 }
 
 // RunServerWithConfig creates and starts a new Server with the given
@@ -72,6 +77,10 @@ func New(config *Config) *Server {
 	// Default data path to /tmp/liftbridge/<namespace> if not set.
 	if config.DataDir == "" {
 		config.DataDir = filepath.Join("/tmp", "liftbridge", config.Clustering.Namespace)
+	}
+	// Default plugin path to <current directory>/plugins if not set.
+	if config.PluginDir == "" {
+		config.PluginDir = "plugins"
 	}
 	logger := logger.NewLogger(config.LogLevel)
 	if config.LogSilent {
@@ -111,6 +120,61 @@ func (s *Server) Start() (err error) {
 	// Create the data directory if it doesn't exist.
 	if err := os.MkdirAll(s.config.DataDir, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to create data path directories")
+	}
+
+	// Load plugins
+	files, err := ioutil.ReadDir(s.config.PluginDir)
+	if err != nil {
+		return errors.Wrap(err, "failed loading plugins")
+	}
+
+	pluginExtension := ""
+	if runtime.GOOS == "linux" {
+		pluginExtension = ".so"
+	} else if runtime.GOOS == "darwin" {
+		pluginExtension = ".dylib"
+	} else if runtime.GOOS == "windows" {
+		pluginExtension = ".dll"
+	} else {
+		return errors.Wrap(err, "unknown plugin extension for os")
+		//TODO
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		if !strings.HasSuffix(file.Name(), pluginExtension) {
+			continue
+		}
+
+		filepath := path.Join(s.config.PluginDir, file.Name())
+
+		plug, err := plugin.Open(filepath)
+		if err != nil {
+			return errors.Wrapf(err, "failed loading %v as a plugin", file.Name())
+		}
+
+		sym, err := plug.Lookup("Plugin")
+		if err != nil {
+			return errors.Wrapf(err, "failed loading %v as a plugin, not a Liftbridge plugin", file.Name())
+		}
+
+		instance, ok := sym.(Plugin)
+		if !ok {
+			return errors.Wrapf(err, "failed loading %v as a plugin, not a Liftbridge plugin", file.Name())
+		}
+
+		s.plugins = append(s.plugins, instance)
+
+		s.logger.Infof("Loaded plugin %v", instance.Name())
+	}
+
+	for _, plugin := range s.plugins {
+		err := plugin.Initialize(s.logger)
+		if err != nil {
+			return errors.Wrapf(err, "failed to call LeadershipAcquired for plugin %v", plugin.Name())
+		}
 	}
 
 	// Recover and persist metadata state.
@@ -349,6 +413,14 @@ func (s *Server) startAPIServer() error {
 	api := grpc.NewServer(opts...)
 	s.api = api
 	client.RegisterAPIServer(api, &apiServer{s})
+
+	for _, plugin := range s.plugins {
+		err := plugin.RegisterGrpcServer(api)
+		if err != nil {
+			return errors.Wrapf(err, "failed to register GRPC server for plugin %v", plugin.Name())
+		}
+	}
+
 	s.mu.Lock()
 	s.running = true
 	s.mu.Unlock()
@@ -465,6 +537,13 @@ func (s *Server) getRaft() *raftNode {
 func (s *Server) leadershipAcquired() error {
 	s.logger.Infof("Server became metadata leader, performing leader promotion actions")
 
+	for _, plugin := range s.plugins {
+		err := plugin.LeadershipAcquired()
+		if err != nil {
+			return errors.Wrapf(err, "failed to call LeadershipAcquired for plugin %v", plugin.Name())
+		}
+	}
+
 	// Use a barrier to ensure all preceding operations are applied to the FSM.
 	if err := s.getRaft().Barrier(0).Error(); err != nil {
 		return err
@@ -484,6 +563,13 @@ func (s *Server) leadershipAcquired() error {
 // leadershipLost should be called when this node loses leadership.
 func (s *Server) leadershipLost() error {
 	s.logger.Warn("Server lost metadata leadership, performing leader stepdown actions")
+
+	for _, plugin := range s.plugins {
+		err := plugin.LeadershipLost()
+		if err != nil {
+			return errors.Wrapf(err, "failed to call LeadershipLost for plugin %v", plugin.Name())
+		}
+	}
 
 	// Unsubscribe from leader NATS subject for propagated requests.
 	if s.leaderSub != nil {
