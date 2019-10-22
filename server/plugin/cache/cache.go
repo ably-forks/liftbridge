@@ -12,13 +12,17 @@ import (
 	"google.golang.org/grpc"
 )
 
+// messageMap represents a collection of message data indexed by a string
 type messageMap map[string][]byte
 
+// safeMessageMap represents a messageMap that can be used from multiple thread
+// Lock and Unlock have to be called before each map access
 type safeMessageMap struct {
 	sync.Mutex
 	m messageMap
 }
 
+// CachePlugin implements a plugin that allows caching messages using their key
 type CachePlugin struct {
 	s        *server.Server
 	isLeader bool
@@ -26,6 +30,7 @@ type CachePlugin struct {
 	config   *Config
 }
 
+// New returns a new cache plugin
 func New() *CachePlugin {
 	return &CachePlugin{
 		m: safeMessageMap{
@@ -34,6 +39,7 @@ func New() *CachePlugin {
 	}
 }
 
+// Initialize load this plugin's configuration file
 func (p *CachePlugin) Initialize(s interface{}) error {
 	p.s = s.(*server.Server)
 
@@ -48,30 +54,33 @@ func (p *CachePlugin) Initialize(s interface{}) error {
 	return nil
 }
 
-func (p CachePlugin) Name() string {
+// Name returns this plugin's name
+func (p *CachePlugin) Name() string {
 	return "Memory Cache"
 }
 
+// RegisterGrpcServer registers this plugin's gRPC API server
 func (p *CachePlugin) RegisterGrpcServer(srv *grpc.Server) error {
 	api.RegisterCacheAPIServer(srv, p)
 	return nil
 }
 
+// LeadershipAcquired
 func (p *CachePlugin) LeadershipAcquired() error {
 	p.isLeader = true
 
 	return nil
 }
 
+// LeadershipLost
 func (p *CachePlugin) LeadershipLost() error {
 	p.isLeader = false
 
 	return nil
 }
 
+// ProcessMessage returns false if the provided message is cached, true otherwise
 func (p *CachePlugin) ProcessMessage(stream string, subject string, m proto.Message) bool {
-	//fmt.Printf("message %v\n", m)
-
 	p.m.Lock()
 	defer p.m.Unlock()
 
@@ -90,6 +99,7 @@ func (p *CachePlugin) ProcessMessage(stream string, subject string, m proto.Mess
 	return true
 }
 
+// MessageReceived adds a message in the cache
 func (p *CachePlugin) MessageReceived(stream string, m *client.Message) {
 	p.m.Lock()
 	defer p.m.Unlock()
@@ -100,6 +110,8 @@ func (p *CachePlugin) MessageReceived(stream string, m *client.Message) {
 	}
 }
 
+// Get is called when a client accesses this plugin's API to query it for a
+// message
 func (p *CachePlugin) Get(ctx context.Context, r *api.GetRequest) (*api.GetResponse, error) {
 	if !p.isLeader {
 		//TODO: redirect to leader

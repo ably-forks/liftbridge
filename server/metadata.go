@@ -452,6 +452,7 @@ func (m *metadataAPI) AddPartition(protoPartition *proto.Partition, recovered bo
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// Subscribe this partition's stream
 	st, ok := m.streams[protoPartition.Stream]
 	if ok {
 		part, ok := st.partitions[protoPartition.Id]
@@ -475,8 +476,6 @@ func (m *metadataAPI) AddPartition(protoPartition *proto.Partition, recovered bo
 						for _, plugin := range m.plugins {
 							plugin.MessageReceived(stream, msg)
 						}
-
-						fmt.Printf("m: key=%v value=%v\n", string(msg.Key), string(msg.Value))
 					}
 				}
 				cancel <- struct{}{}
