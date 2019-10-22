@@ -3,9 +3,7 @@ module github.com/liftbridge-io/liftbridge
 go 1.13
 
 replace github.com/liftbridge-io/liftbridge/server/plugin => ./server/plugin
-
 replace github.com/liftbridge-io/liftbridge/server/plugin/cache => ./server/plugin/cache
-
 replace github.com/liftbridge-io/liftbridge/server/plugin/cache/api => ./server/plugin/cache/api
 
 require (

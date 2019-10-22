@@ -518,7 +518,6 @@ func (m *metadataAPI) addPartition(protoPartition *proto.Partition, recovered bo
 		return nil, err
 	}
 	st.partitions[protoPartition.Id] = partition
-
 	return partition, nil
 }
 
