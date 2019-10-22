@@ -7,7 +7,7 @@ import (
 
 	client "github.com/liftbridge-io/liftbridge-grpc/go"
 	"github.com/liftbridge-io/liftbridge/server"
-	"github.com/liftbridge-io/liftbridge/server/addon/cache/api"
+	"github.com/liftbridge-io/liftbridge/server/plugin/cache/api"
 	"github.com/liftbridge-io/liftbridge/server/proto"
 	"google.golang.org/grpc"
 )
@@ -38,12 +38,12 @@ func (p *CachePlugin) Initialize(s interface{}) error {
 	p.s = s.(*server.Server)
 
 	var err error
-	p.config, err = NewConfig("cache-addon.conf")
+	p.config, err = NewConfig("cache-plugin.conf")
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Loaded addon with value %v\n", p.config.Value)
+	fmt.Printf("Loaded plugin with value %v\n", p.config.Value)
 
 	return nil
 }

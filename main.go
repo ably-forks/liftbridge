@@ -12,8 +12,8 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/liftbridge-io/liftbridge/server"
-	"github.com/liftbridge-io/liftbridge/server/addon"
-	cacheAddon "github.com/liftbridge-io/liftbridge/server/addon/cache"
+	"github.com/liftbridge-io/liftbridge/server/plugin"
+	cachePlugin "github.com/liftbridge-io/liftbridge/server/plugin/cache"
 )
 
 const version = "0.0.1"
@@ -81,10 +81,10 @@ func main() {
 		}
 
 		// TMP
-		addons := []addon.Addon{cacheAddon.New()}
+		plugins := []plugin.Plugin{cachePlugin.New()}
 
 		server := server.New(config)
-		if err := server.Start(addons); err != nil {
+		if err := server.Start(plugins); err != nil {
 			return err
 		}
 		runtime.Goexit()

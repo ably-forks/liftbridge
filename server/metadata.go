@@ -472,8 +472,8 @@ func (m *metadataAPI) AddPartition(protoPartition *proto.Partition, recovered bo
 				for {
 					select {
 					case msg := <-ch:
-						for _, addon := range m.addons {
-							addon.MessageReceived(stream, msg)
+						for _, plugin := range m.plugins {
+							plugin.MessageReceived(stream, msg)
 						}
 
 						fmt.Printf("m: key=%v value=%v\n", string(msg.Key), string(msg.Value))
@@ -519,8 +519,8 @@ func (m *metadataAPI) addPartition(protoPartition *proto.Partition, recovered bo
 	}
 	st.partitions[protoPartition.Id] = partition
 
-	for _, addon := range m.addons {
-		addon.PartitionCreated(protoPartition.Id)
+	for _, plugin := range m.plugins {
+		plugin.PartitionCreated(protoPartition.Id)
 	}
 
 	return partition, nil

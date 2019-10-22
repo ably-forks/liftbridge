@@ -11,7 +11,7 @@ import (
 	"time"
 
 	lift "github.com/liftbridge-io/go-liftbridge"
-	"github.com/liftbridge-io/liftbridge-grpc/go"
+	"github.com/liftbridge-io/liftbridge/server/proto"
 	natsdTest "github.com/nats-io/nats-server/v2/test"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -161,7 +161,7 @@ func TestNoSeed(t *testing.T) {
 	}()
 	s1Config := getTestConfig("a", false, 0)
 	server := New(s1Config)
-	err := server.Start()
+	err := server.Start(nil)
 	require.Error(t, err)
 }
 
@@ -363,7 +363,7 @@ func TestBootstrapMisconfiguration(t *testing.T) {
 	s1 := New(s1Config)
 	s1FatalLogger := &captureFatalLogger{}
 	s1.logger = s1FatalLogger
-	err := s1.Start()
+	err := s1.Start(nil)
 	require.NoError(t, err)
 	defer s1.Stop()
 
@@ -375,7 +375,7 @@ func TestBootstrapMisconfiguration(t *testing.T) {
 	s2 := New(s2Config)
 	s2FatalLogger := &captureFatalLogger{}
 	s2.logger = s2FatalLogger
-	err = s2.Start()
+	err = s2.Start(nil)
 	require.NoError(t, err)
 	defer s2.Stop()
 

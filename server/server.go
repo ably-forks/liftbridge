@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/liftbridge-io/liftbridge/server/addon"
+	"github.com/liftbridge-io/liftbridge/server/plugin"
 	"github.com/liftbridge-io/liftbridge/server/logger"
 	"github.com/liftbridge-io/liftbridge/server/proto"
 )
@@ -53,7 +53,7 @@ type Server struct {
 	shutdown           bool
 	running            bool
 	goroutineWait      sync.WaitGroup
-	addons             []addon.Addon
+	plugins             []plugin.Plugin
 }
 
 // RunServerWithConfig creates and starts a new Server with the given
@@ -90,7 +90,7 @@ func New(config *Config) *Server {
 
 // Start the Server. This is not a blocking call. It will return an error if
 // the Server cannot start properly.
-func (s *Server) Start(addons []addon.Addon) (err error) {
+func (s *Server) Start(plugins []plugin.Plugin) (err error) {
 	defer func() {
 		if err != nil {
 			s.Stop()
@@ -116,9 +116,9 @@ func (s *Server) Start(addons []addon.Addon) (err error) {
 	}
 
 	// Load plugins
-	s.addons = addons
+	s.plugins = plugins
 
-	for _, plugin := range s.addons {
+	for _, plugin := range s.plugins {
 		err := plugin.Initialize(s)
 		if err != nil {
 			return errors.Wrapf(err, "failed to call Initialize for plugin %v", plugin.Name())
@@ -370,10 +370,10 @@ func (s *Server) startAPIServer() error {
 	s.api = api
 	client.RegisterAPIServer(api, &apiServer{s})
 
-	for _, addon := range s.addons {
-		err := addon.RegisterGrpcServer(api)
+	for _, plugin := range s.plugins {
+		err := plugin.RegisterGrpcServer(api)
 		if err != nil {
-			return errors.Wrapf(err, "failed to register GRPC server for addon %v", addon.Name())
+			return errors.Wrapf(err, "failed to register GRPC server for plugin %v", plugin.Name())
 		}
 	}
 
@@ -493,10 +493,10 @@ func (s *Server) getRaft() *raftNode {
 func (s *Server) leadershipAcquired() error {
 	s.logger.Infof("Server became metadata leader, performing leader promotion actions")
 
-	for _, addon := range s.addons {
-		err := addon.LeadershipAcquired()
+	for _, plugin := range s.plugins {
+		err := plugin.LeadershipAcquired()
 		if err != nil {
-			return errors.Wrapf(err, "failed to call LeadershipAcquired for addon %v", addon.Name())
+			return errors.Wrapf(err, "failed to call LeadershipAcquired for plugin %v", plugin.Name())
 		}
 	}
 
@@ -520,10 +520,10 @@ func (s *Server) leadershipAcquired() error {
 func (s *Server) leadershipLost() error {
 	s.logger.Warn("Server lost metadata leadership, performing leader stepdown actions")
 
-	for _, addon := range s.addons {
-		err := addon.LeadershipLost()
+	for _, plugin := range s.plugins {
+		err := plugin.LeadershipLost()
 		if err != nil {
-			return errors.Wrapf(err, "failed to call LeadershipLost for addon %v", addon.Name())
+			return errors.Wrapf(err, "failed to call LeadershipLost for plugin %v", plugin.Name())
 		}
 	}
 

@@ -48,7 +48,7 @@ func TestPartitionCommitLoopCommitNoAck(t *testing.T) {
 
 	// Start Liftbridge server.
 	server := createServer(false)
-	require.NoError(t, server.Start())
+	require.NoError(t, server.Start(nil))
 	defer server.Stop()
 
 	p, err := server.newPartition(&proto.Partition{
@@ -116,7 +116,7 @@ func TestPartitionCommitLoopCommitAck(t *testing.T) {
 
 	// Start Liftbridge server.
 	server := createServer(false)
-	require.NoError(t, server.Start())
+	require.NoError(t, server.Start(nil))
 	defer server.Stop()
 
 	p, err := server.newPartition(&proto.Partition{
@@ -183,7 +183,7 @@ func TestPartitionCommitLoopEmptyQueue(t *testing.T) {
 
 	// Start Liftbridge server.
 	server := createServer(false)
-	require.NoError(t, server.Start())
+	require.NoError(t, server.Start(nil))
 	defer server.Stop()
 
 	p, err := server.newPartition(&proto.Partition{
@@ -246,7 +246,7 @@ func TestPartitionCommitLoopDisposedQueue(t *testing.T) {
 
 	// Start Liftbridge server.
 	server := createServer(false)
-	require.NoError(t, server.Start())
+	require.NoError(t, server.Start(nil))
 	defer server.Stop()
 
 	p, err := server.newPartition(&proto.Partition{

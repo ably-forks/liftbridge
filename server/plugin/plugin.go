@@ -1,4 +1,4 @@
-package addon
+package plugin
 
 import (
 	client "github.com/liftbridge-io/liftbridge-grpc/go"
@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Addon interface {
+type Plugin interface {
 	Initialize(interface{}) error
 	Name() string
 	RegisterGrpcServer(*grpc.Server) error

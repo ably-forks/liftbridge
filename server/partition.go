@@ -562,9 +562,9 @@ LOOP:
 
 		m := natsToProtoMessage(msg, leaderEpoch)
 
-		for _, addon := range p.srv.addons {
-			// Ignore the message if one of the addons requests it
-			if !addon.ProcessMessage(p.GetStream(), p.GetSubject(), *m) {
+		for _, plugin := range p.srv.plugins {
+			// Ignore the message if one of the plugins requests it
+			if !plugin.ProcessMessage(p.GetStream(), p.GetSubject(), *m) {
 				continue LOOP
 			}
 		}
