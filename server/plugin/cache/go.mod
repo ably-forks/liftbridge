@@ -2,12 +2,6 @@ module cache
 
 go 1.13
 
-replace github.com/liftbridge-io/liftbridge/server/plugin => ../
-
-replace github.com/liftbridge-io/liftbridge/server/plugin/cache => ../cache
-
-replace github.com/liftbridge-io/liftbridge/server/plugin/cache/api => ./api
-
 require (
 	github.com/golang/mock v1.3.1
 	github.com/liftbridge-io/liftbridge v0.0.0-20191009142300-f92ab643e701
