@@ -1,4 +1,7 @@
-# Configuration
+---
+id: configuration
+title: Configuration
+---
 
 Liftbridge provides limited configuration through command-line flags and full
 configuration using a configuration file. Flags will always take precedent
@@ -6,13 +9,13 @@ over settings in the configuration file.
 
 The configuration file is passed in using the `--config` flag:
 
-```
+```shell
 $ liftbridge --config liftbridge.conf
 ```
 
 To get a full list of the CLI flags, use the `--help` flag:
 
-```
+```shell
 $ liftbridge --help
 NAME:
    liftbridge - Lightweight, fault-tolerant message streams
@@ -67,7 +70,7 @@ The config file format supports the following syntax:
 
 An example configuration file is shown below.
 
-```
+```plaintext
 listen: localhost:9293
 data.dir: /tmp/liftbridge/server-2
 log.level: debug
@@ -123,6 +126,8 @@ the configuration file.
 | Name | Flag | Description | Type | Default | Valid Values |
 |:----|:----|:----|:----|:----|:----|
 | servers | nats-servers | List of NATS hosts to connect to. | list | nats://localhost:4222 | |
+| user | | Username to use to connect to NATS servers. | string | | |
+| password | | Password to use to connect to NATS servers. | string | | |
 
 ### Log Configuration Settings
 
@@ -155,7 +160,8 @@ the configuration file.
 | raft.bootstrap.seed | raft-bootstrap-seed | Bootstrap the Raft cluster by electing self as leader if there is no existing state. | bool | false | |
 | raft.bootstrap.peers | raft-bootstrap-peers | Bootstrap the Raft cluster with the provided list of peer IDs if there is no existing state. | list | | |
 | raft.logging | | Enables logging in the Raft subsystem. | bool | false | |
-| replica.max.lag.time | | If a follower hasn't sent any replication requests or hasn't caught up to the leader's log end offset for at least this time, the leader will remove the follower from ISR. | duration | 10s | |
-| replica.max.leader.timeout | | If a leader hasn't sent any replication responses for at least this time, the follower will report the leader to the controller. If a majority of the replicas report the leader, a new leader is selected by the controller. | duration | 10s | |
+| replica.max.lag.time | | If a follower hasn't sent any replication requests or hasn't caught up to the leader's log end offset for at least this time, the leader will remove the follower from ISR. | duration | 15s | |
+| replica.max.leader.timeout | | If a leader hasn't sent any replication responses for at least this time, the follower will report the leader to the controller. If a majority of the replicas report the leader, a new leader is selected by the controller. | duration | 15s | |
+| replica.max.idle.wait | | The maximum amount of time a follower will wait before making a replication request once the follower is caught up with the leader. This value should always be less than `replica.max.lag.time` to avoid frequent shrinking of ISR for low-throughput streams. | duration | 10s | |
 | replica.fetch.timeout | | Timeout duration for follower replication requests. | duration | 3s | |
 | min.insync.replicas | | Specifies the minimum number of replicas that must acknowledge a stream write before it can be committed. If the ISR drops below this size, messages cannot be committed. | int | 1 | [1,...] |

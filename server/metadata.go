@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -10,7 +11,6 @@ import (
 	client "github.com/liftbridge-io/liftbridge-grpc/go"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -202,7 +202,7 @@ func (m *metadataAPI) fetchBrokerInfo(ctx context.Context, numPeers int) ([]*cli
 	if err != nil {
 		panic(err)
 	}
-	m.ncRaft.PublishRequest(m.serverInfoInbox(), inbox, queryReq)
+	m.ncRaft.PublishRequest(m.getServerInfoInbox(), inbox, queryReq)
 
 	// Gather responses.
 	for i := 0; i < numPeers; i++ {
@@ -773,7 +773,7 @@ func (m *metadataAPI) waitForPartitionLeader(ctx context.Context, stream, leader
 	if err != nil {
 		panic(err)
 	}
-	inbox := fmt.Sprintf(partitionStatusInboxTemplate, m.baseMetadataRaftSubject(), leader)
+	inbox := m.getPartitionStatusInbox(leader)
 	for i := 0; i < 5; i++ {
 		resp, err := m.ncRaft.RequestWithContext(ctx, inbox, req)
 		if err != nil {

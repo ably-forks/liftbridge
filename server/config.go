@@ -28,8 +28,9 @@ const (
 const (
 	defaultListenAddress           = "0.0.0.0"
 	defaultConnectionAddress       = "localhost"
-	defaultReplicaMaxLagTime       = 10 * time.Second
-	defaultReplicaMaxLeaderTimeout = 10 * time.Second
+	defaultReplicaMaxLagTime       = 15 * time.Second
+	defaultReplicaMaxLeaderTimeout = 15 * time.Second
+	defaultReplicaMaxIdleWait      = 10 * time.Second
 	defaultRaftSnapshots           = 2
 	defaultRaftCacheSize           = 512
 	defaultMetadataCacheMaxAge     = 2 * time.Minute
@@ -93,6 +94,7 @@ type ClusteringConfig struct {
 	ReplicaMaxLagTime       time.Duration
 	ReplicaMaxLeaderTimeout time.Duration
 	ReplicaFetchTimeout     time.Duration
+	ReplicaMaxIdleWait      time.Duration
 	MinISR                  int
 }
 
@@ -131,6 +133,7 @@ func NewDefaultConfig() *Config {
 	config.Clustering.Namespace = DefaultNamespace
 	config.Clustering.ReplicaMaxLagTime = defaultReplicaMaxLagTime
 	config.Clustering.ReplicaMaxLeaderTimeout = defaultReplicaMaxLeaderTimeout
+	config.Clustering.ReplicaMaxIdleWait = defaultReplicaMaxIdleWait
 	config.Clustering.ReplicaFetchTimeout = defaultReplicaFetchTimeout
 	config.Clustering.RaftSnapshots = defaultRaftSnapshots
 	config.Clustering.RaftCacheSize = defaultRaftCacheSize
@@ -298,6 +301,12 @@ func parseNATSConfig(m map[string]interface{}, opts *nats.Options) error {
 			for i, p := range servers {
 				opts.Servers[i] = p.(string)
 			}
+		case "user":
+			user := v.(string)
+			opts.User = user
+		case "password":
+			password := v.(string)
+			opts.Password = password
 		default:
 			return fmt.Errorf("Unknown nats configuration setting %q", k)
 		}
@@ -382,6 +391,12 @@ func parseClusteringConfig(config *Config, m map[string]interface{}) error {
 				return err
 			}
 			config.Clustering.ReplicaMaxLeaderTimeout = dur
+		case "replica.max.idle.wait":
+			dur, err := time.ParseDuration(v.(string))
+			if err != nil {
+				return err
+			}
+			config.Clustering.ReplicaMaxIdleWait = dur
 		case "replica.fetch.timeout":
 			dur, err := time.ParseDuration(v.(string))
 			if err != nil {

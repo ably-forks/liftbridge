@@ -1,11 +1,11 @@
 package commitlog
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 )
 
 // Ensure CheckSplit returns false when the segment has not been written to and
@@ -88,7 +88,7 @@ func TestSegmentSeal(t *testing.T) {
 	require.Equal(t, int64(10485760), stats.Size())
 
 	// Add a waiter.
-	ch := s.waitForData(&mockContextReader{}, 0)
+	ch := s.WaitForData(&mockContextReader{}, 0)
 
 	s.Seal()
 
