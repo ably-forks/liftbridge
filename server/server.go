@@ -9,12 +9,8 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"path"
 	"path/filepath"
-	"plugin"
-	"runtime"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -27,6 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/liftbridge-io/liftbridge/server/addon"
 	"github.com/liftbridge-io/liftbridge/server/logger"
 	"github.com/liftbridge-io/liftbridge/server/proto"
 )
@@ -60,14 +57,14 @@ type Server struct {
 	shutdown           bool
 	running            bool
 	goroutineWait      sync.WaitGroup
-	plugins            []Plugin
+	addons             []addon.Addon
 }
 
 // RunServerWithConfig creates and starts a new Server with the given
 // configuration. It returns an error if the Server failed to start.
 func RunServerWithConfig(config *Config) (*Server, error) {
 	server := New(config)
-	err := server.Start()
+	err := server.Start(nil)
 	return server, err
 }
 
@@ -97,7 +94,7 @@ func New(config *Config) *Server {
 
 // Start the Server. This is not a blocking call. It will return an error if
 // the Server cannot start properly.
-func (s *Server) Start() (err error) {
+func (s *Server) Start(addons []addon.Addon) (err error) {
 	defer func() {
 		if err != nil {
 			s.Stop()
@@ -123,58 +120,15 @@ func (s *Server) Start() (err error) {
 	}
 
 	// Load plugins
-	files, err := ioutil.ReadDir(s.config.PluginDir)
-	if err != nil {
-		return errors.Wrap(err, "failed loading plugins")
-	}
+	s.addons = addons
 
-	pluginExtension := ""
-	if runtime.GOOS == "linux" {
-		pluginExtension = ".so"
-	} else if runtime.GOOS == "darwin" {
-		pluginExtension = ".dylib"
-	} else if runtime.GOOS == "windows" {
-		pluginExtension = ".dll"
-	} else {
-		return errors.Wrap(err, "unknown plugin extension for os")
-		//TODO
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		if !strings.HasSuffix(file.Name(), pluginExtension) {
-			continue
-		}
-
-		filepath := path.Join(s.config.PluginDir, file.Name())
-
-		plug, err := plugin.Open(filepath)
+	for _, plugin := range s.addons {
+		err := plugin.Initialize(s)
 		if err != nil {
-			return errors.Wrapf(err, "failed loading %v as a plugin", file.Name())
+			return errors.Wrapf(err, "failed to call Initialize for plugin %v", plugin.Name())
 		}
 
-		sym, err := plug.Lookup("Plugin")
-		if err != nil {
-			return errors.Wrapf(err, "failed loading %v as a plugin, not a Liftbridge plugin", file.Name())
-		}
-
-		instance, ok := sym.(Plugin)
-		if !ok {
-			return errors.Wrapf(err, "failed loading %v as a plugin, not a Liftbridge plugin", file.Name())
-		}
-
-		s.plugins = append(s.plugins, instance)
-
-		s.logger.Infof("Loaded plugin %v", instance.Name())
-	}
-
-	for _, plugin := range s.plugins {
-		err := plugin.Initialize(s.logger)
-		if err != nil {
-			return errors.Wrapf(err, "failed to call LeadershipAcquired for plugin %v", plugin.Name())
-		}
+		s.logger.Infof("Loaded plugin %v", plugin.Name())
 	}
 
 	// Recover and persist metadata state.
@@ -414,10 +368,10 @@ func (s *Server) startAPIServer() error {
 	s.api = api
 	client.RegisterAPIServer(api, &apiServer{s})
 
-	for _, plugin := range s.plugins {
-		err := plugin.RegisterGrpcServer(api)
+	for _, addon := range s.addons {
+		err := addon.RegisterGrpcServer(api)
 		if err != nil {
-			return errors.Wrapf(err, "failed to register GRPC server for plugin %v", plugin.Name())
+			return errors.Wrapf(err, "failed to register GRPC server for addon %v", addon.Name())
 		}
 	}
 
@@ -537,10 +491,10 @@ func (s *Server) getRaft() *raftNode {
 func (s *Server) leadershipAcquired() error {
 	s.logger.Infof("Server became metadata leader, performing leader promotion actions")
 
-	for _, plugin := range s.plugins {
-		err := plugin.LeadershipAcquired()
+	for _, addon := range s.addons {
+		err := addon.LeadershipAcquired()
 		if err != nil {
-			return errors.Wrapf(err, "failed to call LeadershipAcquired for plugin %v", plugin.Name())
+			return errors.Wrapf(err, "failed to call LeadershipAcquired for addon %v", addon.Name())
 		}
 	}
 
@@ -564,10 +518,10 @@ func (s *Server) leadershipAcquired() error {
 func (s *Server) leadershipLost() error {
 	s.logger.Warn("Server lost metadata leadership, performing leader stepdown actions")
 
-	for _, plugin := range s.plugins {
-		err := plugin.LeadershipLost()
+	for _, addon := range s.addons {
+		err := addon.LeadershipLost()
 		if err != nil {
-			return errors.Wrapf(err, "failed to call LeadershipLost for plugin %v", plugin.Name())
+			return errors.Wrapf(err, "failed to call LeadershipLost for addon %v", addon.Name())
 		}
 	}
 

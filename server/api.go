@@ -21,6 +21,12 @@ type apiServer struct {
 	*Server
 }
 
+type myType struct {
+}
+
+func (m myType) Send(*client.Message) {
+}
+
 // CreateStream creates a new stream attached to a NATS subject. It returns an
 // AlreadyExists status code if a stream with the given subject and name
 // already exists.

@@ -12,6 +12,8 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/liftbridge-io/liftbridge/server"
+	"github.com/liftbridge-io/liftbridge/server/addon"
+	cacheAddon "github.com/liftbridge-io/liftbridge/server/addon/cache"
 )
 
 const version = "0.0.1"
@@ -78,8 +80,11 @@ func main() {
 			config.NATS.Servers = natsServers
 		}
 
+		// TMP
+		addons := []addon.Addon{cacheAddon.New()}
+
 		server := server.New(config)
-		if err := server.Start(); err != nil {
+		if err := server.Start(addons); err != nil {
 			return err
 		}
 		runtime.Goexit()
