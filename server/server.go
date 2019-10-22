@@ -23,8 +23,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/liftbridge-io/liftbridge/server/plugin"
 	"github.com/liftbridge-io/liftbridge/server/logger"
+	"github.com/liftbridge-io/liftbridge/server/plugin"
 	"github.com/liftbridge-io/liftbridge/server/proto"
 )
 
@@ -53,14 +53,14 @@ type Server struct {
 	shutdown           bool
 	running            bool
 	goroutineWait      sync.WaitGroup
-	plugins             []plugin.Plugin
+	plugins            []plugin.Plugin
 }
 
 // RunServerWithConfig creates and starts a new Server with the given
 // configuration. It returns an error if the Server failed to start.
 func RunServerWithConfig(config *Config) (*Server, error) {
 	server := New(config)
-	err := server.Start(nil)
+	err := server.Start()
 	return server, err
 }
 
@@ -90,7 +90,7 @@ func New(config *Config) *Server {
 
 // Start the Server. This is not a blocking call. It will return an error if
 // the Server cannot start properly.
-func (s *Server) Start(plugins []plugin.Plugin) (err error) {
+func (s *Server) Start(plugins ...plugin.Plugin) (err error) {
 	defer func() {
 		if err != nil {
 			s.Stop()

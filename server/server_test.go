@@ -161,7 +161,7 @@ func TestNoSeed(t *testing.T) {
 	}()
 	s1Config := getTestConfig("a", false, 0)
 	server := New(s1Config)
-	err := server.Start(nil)
+	err := server.Start()
 	require.Error(t, err)
 }
 
@@ -363,7 +363,7 @@ func TestBootstrapMisconfiguration(t *testing.T) {
 	s1 := New(s1Config)
 	s1FatalLogger := &captureFatalLogger{}
 	s1.logger = s1FatalLogger
-	err := s1.Start(nil)
+	err := s1.Start()
 	require.NoError(t, err)
 	defer s1.Stop()
 
@@ -375,7 +375,7 @@ func TestBootstrapMisconfiguration(t *testing.T) {
 	s2 := New(s2Config)
 	s2FatalLogger := &captureFatalLogger{}
 	s2.logger = s2FatalLogger
-	err = s2.Start(nil)
+	err = s2.Start()
 	require.NoError(t, err)
 	defer s2.Stop()
 

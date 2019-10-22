@@ -12,7 +12,6 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/liftbridge-io/liftbridge/server"
-	"github.com/liftbridge-io/liftbridge/server/plugin"
 	cachePlugin "github.com/liftbridge-io/liftbridge/server/plugin/cache"
 )
 
@@ -80,11 +79,9 @@ func main() {
 			config.NATS.Servers = natsServers
 		}
 
-		// TMP
-		plugins := []plugin.Plugin{cachePlugin.New()}
-
 		server := server.New(config)
-		if err := server.Start(plugins); err != nil {
+		// TODO: should load the cache plugin following a configuration entry
+		if err := server.Start(cachePlugin.New()); err != nil {
 			return err
 		}
 		runtime.Goexit()
