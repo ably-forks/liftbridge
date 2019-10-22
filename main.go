@@ -56,9 +56,6 @@ func main() {
 		if c.IsSet("data-dir") {
 			config.DataDir = c.String("data-dir")
 		}
-		if c.IsSet("plugin-dir") {
-			config.PluginDir = c.String("plugin-dir")
-		}
 		if c.IsSet("tls-cert") {
 			config.TLSCert = c.String("tls-cert")
 		}

@@ -71,10 +71,6 @@ func New(config *Config) *Server {
 	if config.DataDir == "" {
 		config.DataDir = filepath.Join("/tmp", "liftbridge", config.Clustering.Namespace)
 	}
-	// Default plugin path to <current directory>/plugins if not set.
-	if config.PluginDir == "" {
-		config.PluginDir = "plugins"
-	}
 	logger := logger.NewLogger(config.LogLevel)
 	if config.LogSilent {
 		logger.SetWriter(ioutil.Discard)
