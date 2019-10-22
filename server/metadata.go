@@ -519,10 +519,6 @@ func (m *metadataAPI) addPartition(protoPartition *proto.Partition, recovered bo
 	}
 	st.partitions[protoPartition.Id] = partition
 
-	for _, plugin := range m.plugins {
-		plugin.PartitionCreated(protoPartition.Id)
-	}
-
 	return partition, nil
 }
 

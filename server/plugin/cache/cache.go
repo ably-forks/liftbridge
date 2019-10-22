@@ -100,9 +100,6 @@ func (p *CachePlugin) MessageReceived(stream string, m *client.Message) {
 	}
 }
 
-func (p *CachePlugin) PartitionCreated(part int32) {
-}
-
 func (p *CachePlugin) Get(ctx context.Context, r *api.GetRequest) (*api.GetResponse, error) {
 	if !p.isLeader {
 		//TODO: redirect to leader

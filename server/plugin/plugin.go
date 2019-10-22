@@ -14,5 +14,4 @@ type Plugin interface {
 	LeadershipLost() error
 	ProcessMessage(stream string, subject string, msg proto.Message) bool
 	MessageReceived(stream string, msg *client.Message)
-	PartitionCreated(int32)
 }
