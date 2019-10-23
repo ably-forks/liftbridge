@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/liftbridge-io/liftbridge/server"
+	cachePlugin "github.com/liftbridge-io/liftbridge/server/plugin/cache"
 )
 
 const version = "0.0.1"
@@ -76,7 +77,8 @@ func main() {
 		}
 
 		server := server.New(config)
-		if err := server.Start(); err != nil {
+		// TODO: should load the cache plugin following a configuration entry
+		if err := server.Start(cachePlugin.New()); err != nil {
 			return err
 		}
 		runtime.Goexit()

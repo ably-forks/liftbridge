@@ -451,6 +451,38 @@ func (m *metadataAPI) ReportLeader(ctx context.Context, req *proto.ReportLeaderO
 func (m *metadataAPI) AddPartition(protoPartition *proto.Partition, recovered bool) (*partition, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	// Subscribe this partition's stream
+	st, ok := m.streams[protoPartition.Stream]
+	if ok {
+		part, ok := st.partitions[protoPartition.Id]
+		if ok && part != nil {
+			apiServer := &apiServer{m.Server}
+
+			req := &client.SubscribeRequest{
+				Stream:         protoPartition.Stream,
+				Partition:      protoPartition.Id,
+				StartPosition:  client.StartPosition_EARLIEST,
+				StartOffset:    0,
+				StartTimestamp: 0,
+			}
+			cancel := make(chan struct{})
+			ch, _, _ := apiServer.subscribe(context.Background(), part, req, cancel)
+			stream := protoPartition.Stream
+			m.Server.startGoroutine(func() {
+				for {
+					select {
+					case msg := <-ch:
+						for _, plugin := range m.plugins {
+							plugin.MessageReceived(stream, msg)
+						}
+					}
+				}
+				cancel <- struct{}{}
+			})
+		}
+	}
+
 	partition, err := m.addPartition(protoPartition, recovered, m.newPartition)
 	if err != nil {
 		return nil, err

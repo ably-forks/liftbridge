@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package api;
+
+message GetRequest {
+    string key = 1;
+    string stream = 2;
+    string subject = 3;
+}
+
+message GetResponse {
+    bytes value = 1;
+}
+
+service CacheAPI {
+    rpc Get(GetRequest) returns (GetResponse) {}
+}

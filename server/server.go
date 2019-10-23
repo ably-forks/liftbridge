@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/liftbridge-io/liftbridge/server/logger"
+	"github.com/liftbridge-io/liftbridge/server/plugin"
 	"github.com/liftbridge-io/liftbridge/server/proto"
 )
 
@@ -52,6 +53,7 @@ type Server struct {
 	shutdown           bool
 	running            bool
 	goroutineWait      sync.WaitGroup
+	plugins            []plugin.Plugin
 }
 
 // RunServerWithConfig creates and starts a new Server with the given
@@ -84,7 +86,7 @@ func New(config *Config) *Server {
 
 // Start the Server. This is not a blocking call. It will return an error if
 // the Server cannot start properly.
-func (s *Server) Start() (err error) {
+func (s *Server) Start(plugins ...plugin.Plugin) (err error) {
 	defer func() {
 		if err != nil {
 			s.Stop()
@@ -107,6 +109,18 @@ func (s *Server) Start() (err error) {
 	// Create the data directory if it doesn't exist.
 	if err := os.MkdirAll(s.config.DataDir, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to create data path directories")
+	}
+
+	// Load plugins
+	s.plugins = plugins
+
+	for _, plugin := range s.plugins {
+		err := plugin.Initialize(s)
+		if err != nil {
+			return errors.Wrapf(err, "failed to call Initialize for plugin %v", plugin.Name())
+		}
+
+		s.logger.Infof("Loaded plugin %v", plugin.Name())
 	}
 
 	// Recover and persist metadata state.
@@ -351,6 +365,14 @@ func (s *Server) startAPIServer() error {
 	api := grpc.NewServer(opts...)
 	s.api = api
 	client.RegisterAPIServer(api, &apiServer{s})
+
+	for _, plugin := range s.plugins {
+		err := plugin.RegisterGrpcServer(api)
+		if err != nil {
+			return errors.Wrapf(err, "failed to register GRPC server for plugin %v", plugin.Name())
+		}
+	}
+
 	s.mu.Lock()
 	s.running = true
 	s.mu.Unlock()
@@ -467,6 +489,13 @@ func (s *Server) getRaft() *raftNode {
 func (s *Server) leadershipAcquired() error {
 	s.logger.Infof("Server became metadata leader, performing leader promotion actions")
 
+	for _, plugin := range s.plugins {
+		err := plugin.LeadershipAcquired()
+		if err != nil {
+			return errors.Wrapf(err, "failed to call LeadershipAcquired for plugin %v", plugin.Name())
+		}
+	}
+
 	// Use a barrier to ensure all preceding operations are applied to the FSM.
 	if err := s.getRaft().Barrier(0).Error(); err != nil {
 		return err
@@ -486,6 +515,13 @@ func (s *Server) leadershipAcquired() error {
 // leadershipLost should be called when this node loses leadership.
 func (s *Server) leadershipLost() error {
 	s.logger.Warn("Server lost metadata leadership, performing leader stepdown actions")
+
+	for _, plugin := range s.plugins {
+		err := plugin.LeadershipLost()
+		if err != nil {
+			return errors.Wrapf(err, "failed to call LeadershipLost for plugin %v", plugin.Name())
+		}
+	}
 
 	// Unsubscribe from leader NATS subject for propagated requests.
 	if s.leaderSub != nil {

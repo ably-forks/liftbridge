@@ -551,6 +551,7 @@ func (p *partition) messageProcessingLoop(recvChan <-chan *nats.Msg, stop <-chan
 		batchWait = p.srv.config.BatchWaitTime
 		msgBatch  = make([]*proto.Message, 0, batchSize)
 	)
+LOOP:
 	for {
 		msgBatch = msgBatch[:0]
 		select {
@@ -560,6 +561,14 @@ func (p *partition) messageProcessingLoop(recvChan <-chan *nats.Msg, stop <-chan
 		}
 
 		m := natsToProtoMessage(msg, leaderEpoch)
+
+		for _, plugin := range p.srv.plugins {
+			// Ignore the message if one of the plugins requests it
+			if !plugin.ProcessMessage(p.GetStream(), p.GetSubject(), *m) {
+				continue LOOP
+			}
+		}
+
 		msgBatch = append(msgBatch, m)
 		remaining := batchSize - 1
 

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	lift "github.com/liftbridge-io/go-liftbridge"
-	"github.com/liftbridge-io/liftbridge-grpc/go"
+	"github.com/liftbridge-io/liftbridge/server/proto"
 	natsdTest "github.com/nats-io/nats-server/v2/test"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
