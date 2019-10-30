@@ -164,6 +164,22 @@ func (s *Server) apply(log *proto.RaftLog, index uint64, recovered bool) (interf
 		if err := s.applyExpandISR(stream, replica, partition, index); err != nil {
 			return nil, err
 		}
+	case proto.Op_PAUSE_PARTITION:
+		var (
+			stream    = log.PausePartitionOp.Stream
+			partition = log.PausePartitionOp.Partition
+		)
+		if err := s.applyPausePartition(stream, partition, index); err != nil {
+			return nil, err
+		}
+	case proto.Op_RESUME_PARTITION:
+		var (
+			stream    = log.ResumePartitionOp.Stream
+			partition = log.ResumePartitionOp.Partition
+		)
+		if err := s.applyResumePartition(stream, partition, index); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("Unknown Raft operation: %s", log.Op)
 	}
@@ -396,5 +412,51 @@ func (s *Server) applyChangeStreamLeader(stream, leader string, partitionID int3
 	partition.SetEpoch(epoch)
 
 	s.logger.Debugf("fsm: Changed leader for partition %s to %s", partition, leader)
+	return nil
+}
+
+// TODO
+func (s *Server) applyPausePartition(stream string, partitionID int32, epoch uint64) error {
+	partition := s.metadata.GetPartition(stream, partitionID)
+	if partition == nil {
+		return fmt.Errorf("No such partition [stream=%s, partition=%d]", stream, partitionID)
+	}
+
+	// Idempotency check.
+	if partition.GetEpoch() >= epoch {
+		return nil
+	}
+
+	if err := partition.Pause(); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to pause partition %s",
+			partition))
+	}
+
+	partition.SetEpoch(epoch)
+
+	s.logger.Infof("fsm: Paused partition %s", partition)
+	return nil
+}
+
+// TODO
+func (s *Server) applyResumePartition(stream string, partitionID int32, epoch uint64) error {
+	partition := s.metadata.GetPartition(stream, partitionID)
+	if partition == nil {
+		return fmt.Errorf("No such partition [stream=%s, partition=%d]", stream, partitionID)
+	}
+
+	// Idempotency check.
+	if partition.GetEpoch() >= epoch {
+		return nil
+	}
+
+	if err := partition.Resume(); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to resume partition %s",
+			partition))
+	}
+
+	partition.SetEpoch(epoch)
+
+	s.logger.Infof("fsm: Resumed partition %s", partition)
 	return nil
 }

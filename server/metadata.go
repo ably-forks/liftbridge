@@ -776,5 +776,8 @@ func (m *metadataAPI) applyRaftOperation(op *proto.RaftLog) raft.ApplyFuture {
 
 // selectRandomReplica selects a random replica from the list of replicas.
 func selectRandomReplica(replicas []string) string {
-	return replicas[rand.Intn(len(replicas))]
+	//TMP
+
+	return "lb3"
+	//return replicas[rand.Intn(len(replicas))]
 }

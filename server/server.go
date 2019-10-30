@@ -40,6 +40,7 @@ type Server struct {
 	ncRepl             *nats.Conn
 	ncAcks             *nats.Conn
 	ncPublishes        *nats.Conn
+	ncEvents           *nats.Conn
 	logger             logger.Logger
 	loggerOut          io.Writer
 	api                *grpc.Server
@@ -288,6 +289,14 @@ func (s *Server) createNATSConns() error {
 		return err
 	}
 	s.ncPublishes = ncPublishes
+
+	// NATS connection used for events.
+	ncEvents, err := s.createNATSConn("events")
+	if err != nil {
+		return err
+	}
+	s.ncEvents = ncEvents
+
 	return nil
 }
 
@@ -309,6 +318,9 @@ func (s *Server) closeNATSConns() {
 	}
 	if s.ncPublishes != nil {
 		s.ncPublishes.Close()
+	}
+	if s.ncEvents != nil {
+		s.ncEvents.Close()
 	}
 }
 

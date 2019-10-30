@@ -12,6 +12,8 @@ enum Op {
     REPORT_LEADER    = 2;
     CHANGE_LEADER    = 3;
     EXPAND_ISR       = 4;
+    PAUSE_PARTITION  = 5;
+    RESUME_PARTITION = 6;
 }
 
 message RaftLog {
@@ -20,6 +22,8 @@ message RaftLog {
     ShrinkISROp       shrinkISROp       = 3;
     ChangeLeaderOp    changeLeaderOp    = 4;
     ExpandISROp       expandISROp       = 5;
+    PausePartitionOp  pausePartitionOp  = 6;
+    ResumePartitionOp resumePartitionOp = 7;
 }
 
 message CreatePartitionOp {
@@ -54,6 +58,16 @@ message ChangeLeaderOp {
     string stream    = 1;
     int32  partition = 2;
     string leader    = 3;
+}
+
+message PausePartitionOp {
+    string stream      = 1;
+    int32  partition   = 2;
+}
+
+message ResumePartitionOp {
+    string stream      = 1;
+    int32  partition   = 2;
 }
 
 message Partition {
@@ -103,6 +117,8 @@ message PropagatedRequest {
     ShrinkISROp       shrinkISROp       = 3;
     ReportLeaderOp    reportLeaderOp    = 4;
     ExpandISROp       expandISROp       = 5;
+    PausePartitionOp  pausePartitionOp  = 6;
+    ResumePartitionOp resumePartitionOp = 7;
 }
 
 message Error {

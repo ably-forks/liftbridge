@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli"
@@ -17,6 +18,16 @@ import (
 const version = "0.0.1"
 
 func main() {
+	go func() {
+		for {
+			var s runtime.MemStats
+			runtime.ReadMemStats(&s)
+			fmt.Printf("Goroutines: %v, alloc %v kB\n", runtime.NumGoroutine(), s.Alloc/1024)
+
+			time.Sleep(time.Second)
+		}
+	}()
+
 	app := cli.NewApp()
 	app.Name = "liftbridge"
 	app.Usage = "Lightweight, fault-tolerant message streams"

@@ -92,6 +92,7 @@ type partition struct {
 	belowMinISR     bool
 	pause           bool // Pause replication on the leader (for unit testing)
 	shutdown        sync.WaitGroup
+	lastMsgRcvTime  time.Time
 }
 
 // newPartition creates a new stream partition. If the partition is recovered,
@@ -338,10 +339,123 @@ func (p *partition) becomeLeader(epoch uint64) error {
 	p.leaderOffsetSub = sub
 	p.srv.ncRepl.Flush()
 
+	p.srv.startGoroutine(func() {
+		for {
+			select {
+			case <-p.stopLeader:
+				return
+			default:
+			}
+
+			if !p.lastMsgRcvTime.IsZero() {
+				d := time.Since(p.lastMsgRcvTime)
+				if d > 10*time.Second {
+					//TODO: never pause the event subject/stream's partitions
+					fmt.Printf("[lastMsgRcvTime] Inactive %v since %v\n", p.String(), d)
+
+					// Replicate partition create through Raft.
+					op := &proto.RaftLog{
+						Op: proto.Op_PAUSE_PARTITION,
+						PausePartitionOp: &proto.PausePartitionOp{
+							Stream:    p.GetStream(),
+							Partition: p.GetId(),
+						},
+					}
+
+					// Wait on result of replication.
+					future := p.srv.metadata.applyRaftOperation(op)
+					if err := future.Error(); err != nil {
+						fmt.Printf("failed to pause partition: %v", err)
+						return
+						//return errors.Wrap(err, "failed to pause partition")
+					}
+
+					// If there is a response, it's an error (most likely ErrPartitionExists).
+					if resp := future.Response(); resp != nil {
+						err := resp.(error)
+						fmt.Printf("failed to pause partition: %v", err)
+						return
+						//return status.New(code, err.Error())
+					}
+
+					// Subscribe to the NATS subject and begin sequencing messages.
+					// TODO: This should be drained on shutdown.
+					sub, err := p.srv.nc.QueueSubscribe(p.getSubject(), p.Group, func(m *nats.Msg) {
+						//p.recvChan <- m
+						fmt.Printf("waking up\n")
+
+						// Replicate partition create through Raft.
+						op := &proto.RaftLog{
+							Op: proto.Op_RESUME_PARTITION,
+							ResumePartitionOp: &proto.ResumePartitionOp{
+								Stream:    p.GetStream(),
+								Partition: p.GetId(),
+							},
+						}
+
+						// Wait on result of replication.
+						future := p.srv.metadata.applyRaftOperation(op)
+						if err := future.Error(); err != nil {
+							fmt.Printf("failed to resume partition: %v", err)
+							return
+							//return errors.Wrap(err, "failed to pause partition")
+						}
+
+						// Send event
+						if err := p.srv.ncEvents.Publish("events", []byte("resume")); err != nil {
+							p.srv.logger.Errorf("fsm: Failed to publish event message: %v", err)
+							return
+						}
+					})
+					if err != nil {
+						fmt.Printf("failed to subscribe to NATS: %v", err)
+						return // errors.Wrap(err, "failed to subscribe to NATS")
+					}
+					sub.SetPendingLimits(-1, -1)
+					sub.AutoUnsubscribe(1)
+					p.srv.nc.Flush()
+
+					// Send event
+					if err := p.srv.ncEvents.Publish("events", []byte("pause")); err != nil {
+						p.srv.logger.Errorf("fsm: Failed to publish event message: %v", err)
+						return
+					}
+				}
+			}
+
+			time.Sleep(time.Second)
+		}
+		p.shutdown.Done()
+	})
+
 	p.isLeading = true
 	p.isFollowing = false
 
 	return nil
+}
+
+func (p *partition) Pause() error {
+	//TODO
+	if p.isLeading {
+		p.stopLeading()
+	} else if p.isFollowing {
+		p.stopFollowing()
+	} else {
+		fmt.Printf("Not following or leading\n")
+	}
+
+	return nil
+}
+
+func (p *partition) Resume() error {
+	//TODO
+
+	p.lastMsgRcvTime = time.Now()
+	p.recovered = true
+
+	_, err := p.StartRecovered()
+
+	return err
 }
 
 // stopLeading causes the partition to step down as leader by unsubscribing
@@ -607,6 +721,8 @@ func (p *partition) messageProcessingLoop(recvChan <-chan *nats.Msg, stop <-chan
 			p.srv.config.Clustering.ServerID,
 			offsets[len(offsets)-1],
 		)
+
+		p.lastMsgRcvTime = time.Now()
 	}
 }
 
