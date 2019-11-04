@@ -339,7 +339,7 @@ func (p *partition) becomeLeader(epoch uint64) error {
 	p.leaderOffsetSub = sub
 	p.srv.ncRepl.Flush()
 
-	p.srv.startGoroutine(func() {
+	go func() {
 		for {
 			select {
 			case <-p.stopLeader:
@@ -420,13 +420,14 @@ func (p *partition) becomeLeader(epoch uint64) error {
 						p.srv.logger.Errorf("fsm: Failed to publish event message: %v", err)
 						return
 					}
+
+					return
 				}
 			}
 
 			time.Sleep(time.Second)
 		}
-		p.shutdown.Done()
-	})
+	}()
 
 	p.isLeading = true
 	p.isFollowing = false
