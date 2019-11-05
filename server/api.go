@@ -52,11 +52,12 @@ func (a *apiServer) CreateStream(ctx context.Context, req *client.CreateStreamRe
 	for i := int32(0); i < req.Partitions; i++ {
 		if e := a.metadata.CreatePartition(ctx, &proto.CreatePartitionOp{
 			Partition: &proto.Partition{
-				Subject:           req.Subject,
-				Stream:            req.Name,
-				Group:             req.Group,
-				ReplicationFactor: req.ReplicationFactor,
-				Id:                i,
+				Subject:             req.Subject,
+				Stream:              req.Name,
+				Group:               req.Group,
+				ReplicationFactor:   req.ReplicationFactor,
+				Id:                  i,
+				AutoDisableDuration: req.AutoDisableDuration,
 			},
 		}); e != nil {
 			// In the case of partial failure, let the caller retry.

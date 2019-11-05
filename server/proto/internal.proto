@@ -71,16 +71,17 @@ message ResumePartitionOp {
 }
 
 message Partition {
-    string          subject           = 1;
-    string          stream            = 2;
-    int32           id                = 3;
-    string          group             = 4;
-    int32           replicationFactor = 5;
-    repeated string replicas          = 6;
-    string          leader            = 7;
-    repeated string isr               = 8;
-    uint64          leaderEpoch       = 9;
-    uint64          epoch             = 10;
+    string          subject             = 1;
+    string          stream              = 2;
+    int32           id                  = 3;
+    string          group               = 4;
+    int32           replicationFactor   = 5;
+    repeated string replicas            = 6;
+    string          leader              = 7;
+    repeated string isr                 = 8;
+    uint64          leaderEpoch         = 9;
+    uint64          epoch               = 10;
+    uint64          autoDisableDuration = 11;
 }
 
 // RaftJoinRequest is a request to join a Raft group.
