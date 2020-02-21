@@ -2,6 +2,10 @@ module github.com/liftbridge-io/liftbridge
 
 go 1.13
 
+replace github.com/liftbridge-io/liftbridge-api => ../liftbridge-api
+
+replace github.com/liftbridge-io/liftbridge => ../liftbridge
+
 require (
 	github.com/Workiva/go-datastructures v1.0.50
 	github.com/dustin/go-humanize v1.0.0
