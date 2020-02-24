@@ -778,6 +778,6 @@ func (m *metadataAPI) applyRaftOperation(op *proto.RaftLog) raft.ApplyFuture {
 func selectRandomReplica(replicas []string) string {
 	//TMP
 
-	return "lb3"
-	//return replicas[rand.Intn(len(replicas))]
+	//return "lb3"
+	return replicas[rand.Intn(len(replicas))]
 }

@@ -291,7 +291,7 @@ func (s *Server) createNATSConns() error {
 	s.ncPublishes = ncPublishes
 
 	// NATS connection used for events.
-	ncEvents, err := s.createNATSConn("events")
+	ncEvents, err := s.createNATSConn(eventsSubject)
 	if err != nil {
 		return err
 	}
