@@ -73,4 +73,6 @@ type CommitLog interface {
 	// Close closes each log segment file and stops the background goroutine
 	// checkpointing the high watermark to disk.
 	Close() error
+	Pause() error
+	Resume() error
 }

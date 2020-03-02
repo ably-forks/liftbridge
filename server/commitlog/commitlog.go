@@ -418,6 +418,54 @@ func (l *commitLog) Close() error {
 	return nil
 }
 
+func (l *commitLog) Pause() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if err := l.checkpointHW(); err != nil {
+		return err
+	}
+	close(l.closed)
+	for _, segment := range l.segments {
+		if err := segment.Close(); err != nil {
+			return err
+		}
+	}
+	l.segments = []*segment{}
+	return nil
+}
+
+func (l *commitLog) Resume() error {
+	l.closed = make(chan struct{})
+	l.hwWaiters = make(map[contextReader]chan struct{})
+
+	if err := l.init(); err != nil {
+		return err
+	}
+
+	if err := l.open(); err != nil {
+		return err
+	}
+
+	// After an unclean shutdown, the leader epoch checkpoint file could be
+	// ahead of the log (as the log is flushed asynchronously by default). To
+	// account for this, remove all entries from the leader epoch checkpoint
+	// file where the offset is greater than the log end offset.
+	if err := l.leaderEpochCache.ClearLatest(l.activeSegment().NextOffset()); err != nil {
+		return err
+	}
+
+	// The earliest leader epoch may not be flushed during a hard failure.
+	// Recover it here.
+	if err := l.leaderEpochCache.ClearEarliest(l.OldestOffset()); err != nil {
+		return err
+	}
+
+	go l.checkpointHWLoop()
+	go l.cleanerLoop()
+
+	return nil
+}
+
 // Delete closes the log and removes all data associated with it from the
 // filesystem.
 func (l *commitLog) Delete() error {

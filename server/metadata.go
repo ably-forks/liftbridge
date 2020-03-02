@@ -468,13 +468,28 @@ func (m *metadataAPI) addPartition(protoPartition *proto.Partition, recovered bo
 	st, ok := m.streams[protoPartition.Stream]
 	if !ok {
 		st = &stream{
-			name:       protoPartition.Stream,
-			subject:    protoPartition.Subject,
-			partitions: make(map[int32]*partition),
+			name:              protoPartition.Stream,
+			subject:           protoPartition.Subject,
+			partitions:        make(map[int32]*partition),
+			AutoCloseDuration: time.Duration(protoPartition.AutoDisableDuration) * time.Second,
 		}
+
+		if protoPartition.AutoDisableDuration > 0 {
+			st.SetupAutoclose()
+		}
+
 		m.streams[protoPartition.Stream] = st
 	}
-	if _, ok := st.partitions[protoPartition.Id]; ok {
+
+	if p, ok := st.partitions[protoPartition.Id]; ok {
+		if p.paused {
+			p.paused = false
+
+			fmt.Printf("RESUME\n")
+			p.Resume()
+			st.SetupAutoclose()
+		}
+
 		// Partition already exists for stream.
 		return nil, ErrPartitionExists
 	}

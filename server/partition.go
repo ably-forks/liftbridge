@@ -95,6 +95,7 @@ type partition struct {
 	pause           bool // Pause replication on the leader (for unit testing)
 	shutdown        sync.WaitGroup
 	lastMsgRcvTime  time.Time
+	paused          bool
 }
 
 // newPartition creates a new stream partition. If the partition is recovered,
@@ -450,6 +451,10 @@ func (p *partition) becomeLeader(epoch uint64) error {
 }
 
 func (p *partition) Pause() error {
+	if err := p.log.Pause(); err != nil {
+		return err
+	}
+
 	//TODO
 	if p.isLeading {
 		p.stopLeading()
@@ -459,11 +464,14 @@ func (p *partition) Pause() error {
 		fmt.Printf("Not following or leading\n")
 	}
 
+	p.paused = true
+
 	return nil
 }
 
 func (p *partition) Resume() error {
 	//TODO
+	p.log.Resume()
 
 	p.lastMsgRcvTime = time.Now()
 	p.recovered = true
@@ -738,6 +746,8 @@ func (p *partition) messageProcessingLoop(recvChan <-chan *nats.Msg, stop <-chan
 		)
 
 		p.lastMsgRcvTime = time.Now()
+		stream := p.srv.metadata.GetStream(p.Stream)
+		stream.AutoCloseTimer.Reset(stream.AutoCloseDuration)
 	}
 }
 
