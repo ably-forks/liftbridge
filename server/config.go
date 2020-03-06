@@ -26,21 +26,23 @@ const (
 )
 
 const (
-	defaultListenAddress           = "0.0.0.0"
-	defaultConnectionAddress       = "localhost"
-	defaultReplicaMaxLagTime       = 15 * time.Second
-	defaultReplicaMaxLeaderTimeout = 15 * time.Second
-	defaultReplicaMaxIdleWait      = 10 * time.Second
-	defaultRaftSnapshots           = 2
-	defaultRaftCacheSize           = 512
-	defaultMetadataCacheMaxAge     = 2 * time.Minute
-	defaultBatchMaxMessages        = 1024
-	defaultReplicaFetchTimeout     = 3 * time.Second
-	defaultMinInsyncReplicas       = 1
-	defaultRetentionMaxAge         = 7 * 24 * time.Hour
-	defaultCleanerInterval         = 5 * time.Minute
-	defaultMaxSegmentBytes         = 1024 * 1024 * 256 // 256MB
-	defaultLogRollTime             = defaultRetentionMaxAge
+	defaultListenAddress                      = "0.0.0.0"
+	defaultConnectionAddress                  = "localhost"
+	defaultReplicaMaxLagTime                  = 15 * time.Second
+	defaultReplicaMaxLeaderTimeout            = 15 * time.Second
+	defaultReplicaMaxIdleWait                 = 10 * time.Second
+	defaultRaftSnapshots                      = 2
+	defaultRaftCacheSize                      = 512
+	defaultMetadataCacheMaxAge                = 2 * time.Minute
+	defaultBatchMaxMessages                   = 1024
+	defaultReplicaFetchTimeout                = 3 * time.Second
+	defaultMinInsyncReplicas                  = 1
+	defaultRetentionMaxAge                    = 7 * 24 * time.Hour
+	defaultCleanerInterval                    = 5 * time.Minute
+	defaultMaxSegmentBytes                    = 1024 * 1024 * 256 // 256MB
+	defaultLogRollTime                        = defaultRetentionMaxAge
+	defaultActivityStreamPublicationTimeout   = 5 * time.Second
+	defaultActivityStreamPublicationAckPolicy = "all"
 )
 
 // LogConfig contains settings for controlling the message log for a stream.
@@ -97,6 +99,17 @@ type ClusteringConfig struct {
 	MinISR                  int
 }
 
+// ActivityStreamConfig contains settings for controlling activity stream
+// behavior.
+type ActivityStreamConfig struct {
+	Enabled              bool
+	PublicationTimeout   time.Duration
+	PublicationAckPolicy string
+	Group                string
+	ReplicationFactor    int32
+	Partitions           int32
+}
+
 // Config contains all settings for a Liftbridge Server.
 type Config struct {
 	Listen              HostPort
@@ -116,6 +129,7 @@ type Config struct {
 	NATS                nats.Options
 	Log                 LogConfig
 	Clustering          ClusteringConfig
+	ActivityStream      ActivityStreamConfig
 }
 
 // NewDefaultConfig creates a new Config with default settings.
@@ -140,6 +154,8 @@ func NewDefaultConfig() *Config {
 	config.Log.RetentionMaxAge = defaultRetentionMaxAge
 	config.Log.LogRollTime = defaultLogRollTime
 	config.Log.CleanerInterval = defaultCleanerInterval
+	config.ActivityStream.PublicationTimeout = defaultActivityStreamPublicationTimeout
+	config.ActivityStream.PublicationAckPolicy = defaultActivityStreamPublicationAckPolicy
 	return config
 }
 
@@ -273,6 +289,10 @@ func NewConfig(configFile string) (*Config, error) { // nolint: gocyclo
 			if err := parseClusteringConfig(config, v.(map[string]interface{})); err != nil {
 				return nil, err
 			}
+		case "activity.stream":
+			if err := parseActivityStreamConfig(config, v.(map[string]interface{})); err != nil {
+				return nil, err
+			}
 		default:
 			return nil, fmt.Errorf("Unknown configuration setting %q", k)
 		}
@@ -403,6 +423,42 @@ func parseClusteringConfig(config *Config, m map[string]interface{}) error { // 
 			config.Clustering.MinISR = int(v.(int64))
 		default:
 			return fmt.Errorf("Unknown clustering configuration setting %q", k)
+		}
+	}
+	return nil
+}
+
+// parseActivityStreamConfig parses the `activitystream` section of a config
+// file and populates the given Config.
+func parseActivityStreamConfig(config *Config, m map[string]interface{}) error { // nolint: gocyclo
+	for k, v := range m {
+		switch strings.ToLower(k) {
+		case "enabled":
+			config.ActivityStream.Enabled = v.(bool)
+		case "publication.timeout":
+			dur, err := time.ParseDuration(v.(string))
+			if err != nil {
+				return err
+			}
+			config.ActivityStream.PublicationTimeout = dur
+		case "publication.ack.policy":
+			policy := v.(string)
+			switch policy {
+			case "none":
+			case "leader":
+			case "all":
+			default:
+				return fmt.Errorf("Unknown activity stream publication ack policy %q", policy)
+			}
+			config.ActivityStream.PublicationAckPolicy = policy
+		case "group":
+			config.ActivityStream.Group = v.(string)
+		case "replication.factor":
+			config.ActivityStream.ReplicationFactor = int32(v.(int64))
+		case "partitions":
+			config.ActivityStream.Partitions = int32(v.(int64))
+		default:
+			return fmt.Errorf("Unknown activity stream configuration setting %q", k)
 		}
 	}
 	return nil
