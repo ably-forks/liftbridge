@@ -230,3 +230,48 @@ func TestMetadataPartitionExistsPartitionNotFound(t *testing.T) {
 	err = metadata.partitionExists("foo", 1)
 	require.Equal(t, ErrPartitionNotFound, err)
 }
+
+// Ensure checkResumeStreamPreconditions returns ErrStreamNotFound if the
+// stream doesn't exist.
+func TestMetadataCheckSetStreamReadonlyPreconditionsStreamNotFound(t *testing.T) {
+	defer cleanupStorage(t)
+
+	server := New(getTestConfig("a", true, 0))
+	metadata := newMetadataAPI(server)
+	defer metadata.Reset()
+
+	err := metadata.checkSetStreamReadonlyPreconditions(&proto.RaftLog{
+		Op:                  proto.Op_SET_STREAM_READONLY,
+		SetStreamReadonlyOp: &proto.SetStreamReadonlyOp{Stream: "foo"},
+	})
+	require.Equal(t, ErrStreamNotFound, err)
+}
+
+// Ensure checkResumeStreamPreconditions returns ErrPartitionNotFound if the
+// partition doesn't exist.
+func TestMetadataCheckSetStreamReadonlyPreconditionsPartitionNotFound(t *testing.T) {
+	defer cleanupStorage(t)
+
+	server := New(getTestConfig("a", true, 0))
+	metadata := newMetadataAPI(server)
+	defer metadata.Reset()
+
+	_, err := metadata.AddStream(&proto.Stream{
+		Name:    "foo",
+		Subject: "foo",
+		Partitions: []*proto.Partition{
+			{
+				Stream:  "foo",
+				Subject: "foo",
+				Id:      0,
+			},
+		},
+	}, false)
+	require.NoError(t, err)
+
+	err = metadata.checkSetStreamReadonlyPreconditions(&proto.RaftLog{
+		Op:                  proto.Op_SET_STREAM_READONLY,
+		SetStreamReadonlyOp: &proto.SetStreamReadonlyOp{Stream: "foo", Partitions: []int32{1}},
+	})
+	require.Equal(t, ErrPartitionNotFound, err)
+}
