@@ -19,6 +19,12 @@ github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Workiva/go-datastructures v1.0.52 h1:PLSK6pwn8mYdaoaCZEMsXBpBotr4HHn9abU0yMQt0NI=
 github.com/Workiva/go-datastructures v1.0.52/go.mod h1:Z+F2Rca0qCsVYDS8z7bAGm8f3UkzuWYS/oBZz5a7VVA=
+github.com/ably-forks/go-liftbridge v1.9.0 h1:yPgcgcoqSyD179owmWTToPBUXS4qbqfbKRPv3vDuB58=
+github.com/ably-forks/go-liftbridge v1.9.0/go.mod h1:mM/u0+A/aVigzWyYwMPp7aGYfYByb8VQJwki8/Rysbw=
+github.com/ably-forks/liftbridge v1.9.0 h1:M6j+LdR9YIHPVx99V1uSqyLckDbCnJv44/GfcL+ITa4=
+github.com/ably-forks/liftbridge v1.9.0/go.mod h1:LH2eklWKRSDGvtPz3SmU04Cx0/V0Xcs4JBlnUunotUg=
+github.com/ably-forks/liftbridge-api v1.9.0 h1:jglicwDNyunYAyYGmTO3SW4IfAnYRYNszwuOU1YNZj0=
+github.com/ably-forks/liftbridge-api v1.9.0/go.mod h1:VKUkozs5yuD0jcJH8cALCPV1WdmncwXgkv8wX/ay35g=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=

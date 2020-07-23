@@ -1,6 +1,12 @@
-module github.com/liftbridge-io/liftbridge
+module github.com/ably-forks/liftbridge
 
 go 1.14
+
+replace github.com/liftbridge-io/liftbridge-api => github.com/ably-forks/liftbridge-api v1.9.0
+
+replace github.com/liftbridge-io/liftbridge => github.com/ably-forks/liftbridge v1.9.0
+
+replace github.com/liftbridge-io/go-liftbridge => github.com/ably-forks/go-liftbridge v1.9.0
 
 require (
 	github.com/Workiva/go-datastructures v1.0.52
@@ -15,6 +21,7 @@ require (
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/raft v1.1.2
 	github.com/liftbridge-io/go-liftbridge v1.0.1-0.20200707183953-f9c0b883e534
+	github.com/liftbridge-io/liftbridge v0.0.0-00010101000000-000000000000
 	github.com/liftbridge-io/liftbridge-api v1.1.0
 	github.com/liftbridge-io/nats-on-a-log v0.0.0-20200303015016-68120bc11e03
 	github.com/liftbridge-io/raft-boltdb v0.0.0-20200414234651-aaf6e08d8f73
