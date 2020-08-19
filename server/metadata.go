@@ -267,6 +267,8 @@ func (m *metadataAPI) createMetadataResponse(streams []string) *client.FetchMeta
 					Leader:   leader,
 					Replicas: partition.GetReplicas(),
 					Isr:      partition.GetISR(),
+					Paused:   partition.paused,
+					Readonly: partition.readonly,
 				}
 			}
 			metadata[i] = &client.StreamMetadata{
